@@ -6,16 +6,17 @@ This package implements hexadecimal encoding and decoding routines for the Motok
 
 ### Prerequisites
 
-- [DFINITY SDK](https://sdk.dfinity.org/docs/download.html) v0.6.16
+- DFINITY SDK
+- Vessel
 
 ### Usage
 
 Encode an array of unsigned 8-bit integers in hexadecimal format.
 ```motoko
-public func encode(array : [Word8]) : Text
+public func encode(array : [Nat8], characterCasing: { #upper; #lower }) : Text
 ```
 
 Decode an array of unsigned 8-bit integers in hexadecimal format.
 ```motoko
-public func decode(text : Text) : Result<[Word8], DecodeError> 
+public func decode(text : Text, characterCasing: { #upper; #lower }) : Result<[Nat8], DecodeError> 
 ```

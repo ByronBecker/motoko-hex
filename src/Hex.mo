@@ -5,6 +5,9 @@
  * License     : Apache 2.0 with LLVM Exception
  * Maintainer  : Enzo Haussecker <enzo@dfinity.org>
  * Stability   : Stable
+ *
+ *
+ * Note: Updated by Byron Becker in 2022 (Independent of DFINITY)
  */
 
 import Array "mo:base/Array";
@@ -20,7 +23,11 @@ module {
 
   private let base : Nat8 = 0x10;
 
-  private let symbols = [
+  private let lowerSymbols = [
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+  ];
+  private let upperSymbols = [
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
   ];
@@ -32,19 +39,25 @@ module {
     #msg : Text;
   };
 
+  public type Casing = { #upper; #lower };
+
   /**
    * Encode an array of unsigned 8-bit integers in hexadecimal format.
    */
-  public func encode(array : [Nat8]) : Text {
+  public func encode(array : [Nat8], characterCasing: Casing) : Text {
     Array.foldLeft<Nat8, Text>(array, "", func (accum, w8) {
-      accum # encodeW8(w8);
+      accum # encodeW8(w8, characterCasing);
     });
   };
 
   /**
    * Encode an unsigned 8-bit integer in hexadecimal format.
    */
-  private func encodeW8(w8 : Nat8) : Text {
+  private func encodeW8(w8 : Nat8, characterCasing: Casing) : Text {
+    let symbols = switch(characterCasing) {
+      case (#upper) { upperSymbols };
+      case (#lower) { lowerSymbols };
+    };
     let c1 = symbols[Nat8.toNat(w8 / base)];
     let c2 = symbols[Nat8.toNat(w8 % base)];
     Char.toText(c1) # Char.toText(c2);
@@ -53,15 +66,15 @@ module {
   /**
    * Decode an array of unsigned 8-bit integers in hexadecimal format.
    */
-  public func decode(text : Text) : Result<[Nat8], DecodeError> {
+  public func decode(text : Text, characterCasing: Casing) : Result<[Nat8], DecodeError> {
     let next = text.chars().next;
     func parse() : Result<Nat8, DecodeError> {
       Option.get<Result<Nat8, DecodeError>>(
         do ? {
           let c1 = next()!;
           let c2 = next()!;
-          Result.chain<Nat8, Nat8, DecodeError>(decodeW4(c1), func (x1) {
-            Result.chain<Nat8, Nat8, DecodeError>(decodeW4(c2), func (x2) {
+          Result.chain<Nat8, Nat8, DecodeError>(decodeW4(c1, characterCasing), func (x1) {
+            Result.chain<Nat8, Nat8, DecodeError>(decodeW4(c2, characterCasing), func (x2) {
                 #ok (x1 * base + x2);
             })
           })
@@ -89,7 +102,11 @@ module {
   /**
    * Decode an unsigned 4-bit integer in hexadecimal format.
    */
-  private func decodeW4(char : Char) : Result<Nat8, DecodeError> {
+  private func decodeW4(char : Char, characterCasing: Casing) : Result<Nat8, DecodeError> {
+    let symbols = switch(characterCasing) {
+      case (#upper) { upperSymbols };
+      case (#lower) { lowerSymbols };
+    };
     for (i in Iter.range(0, 15)) {
       if (symbols[i] == char) {
         return #ok (Nat8.fromNat(i));
